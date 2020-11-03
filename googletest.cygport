@@ -1,0 +1,188 @@
+################################
+inherit cmake ninja python3
+
+################################
+
+NAME=googletest
+VERSION=1.10.0p473
+RELEASE=1
+
+################################
+CATEGORY="Devel Libs"
+SUMMARY="Google C++ testing framework"
+DESCRIPTION="\
+googletest is a testing framework developed by the Testing Technology
+team with Google's specific requirements and constraints in mind.
+Whether you work on Linux, Windows, or a Mac, if you write C++ code,
+googletest can help you. And it supports any kind of tests, not just
+unit tests."
+HOMEPAGE="https://github.com/google/googletest"
+
+################################
+## Source from a git repository
+################################
+GIT_REPO="https://github.com/google/googletest"
+declare -A GIT_DATEHASH_BY_NAME=(
+  # git log --date=iso-strict --format='%cd/%H' -1
+  [1.10.0p473]=2020-11-02T22:26:39-05:00/fb98f7447e5d2e498d6458dcd5c888fdeaae82bc
+  [1.10.0p463]=2020-10-30T14:10:41-04:00/2828773179fa425ee406df61890a150577178ea2
+  [1.10.0p2]=2020-03-03T09:44:53-05:00/6a7ed316a5cdc07b6d26362c90770787513822d4 #v1.10.x
+  [1.10.0]=2019-10-03T10:52:15-04:00/703bd9caab50b139428cea1aaff9974ebee5742e #release-1.10.0
+)
+REV_HASH="${GIT_DATEHASH_BY_NAME[${VERSION}]#*/}"
+REV_DATE="${GIT_DATEHASH_BY_NAME[${VERSION}]%/*}"
+REV_DATE_SHORT="${GIT_DATEHASH_BY_NAME[${VERSION}]%T*}"
+GIT_BASENAME="${GIT_REPO##*/}"
+SRC_URI="${GIT_REPO}/archive/${REV_HASH}.tar.gz"   # GitHub
+#SRC_URI="${GIT_REPO}/-/archive/${REV_HASH}/${GIT_BASENAME}-${REV_HASH}.tar.bz2" # GitLab
+SRC_LOCAL=${SRC_URI##*/}
+SRC_DIR="${GIT_BASENAME}-${REV_HASH}"
+
+
+################################
+## ABI
+ABI=0
+################################
+
+################################
+## Settings for CMake
+################################
+if [ -n "${NO_NINJA}" ]; then
+  MAKEOPTS=-j1
+  CYGCMAKE_GENERATOR="Unix Makefiles"
+fi
+
+CYGCMAKE_ARGS="
+  -DCYGWIN:BOOL=ON
+  -DBUILD_SHARED_LIBS:BOOL=ON
+  -DPYTHON_EXECUTABLE=/usr/bin/python3.8
+"
+# PYTHON_EXECUTABLE is used by deprecated find_package(PythonInterp)
+# in googletest/cmake/internal_utils.cmake
+
+################################
+## Requirements for building
+################################
+BUILD_REQUIRES="\
+  pkg-config\
+  cmake\
+  ninja\
+  python3-devel\
+  python38-devel\
+"
+
+################################
+## Patch files
+################################
+# Patch filenames are in a default style of 'git format-patch'
+PATCH_URI=$(\
+  find -maxdepth 1 -type f -name '[0-9][0-9][0-9][0-9]-*.patch' \
+  | sort \
+)
+# Additional patches, if any
+PATCH_URI+="
+"
+
+################################
+THIS_PN="gmock"
+THIS_VN=${THIS_PN//[-+\.]/_}
+PKG_NAMES+=" ${THIS_PN}"
+
+printf -v "${THIS_VN}_CATEGORY" "%s" "${CATEGORY}"
+printf -v "${THIS_VN}_SUMMARY"  "%s" "${SUMMARY% *} (devel)"
+printf -v "${THIS_VN}_CONTENTS" "%s" "\
+  usr/bin/cyggmock*\
+"
+printf -v "${THIS_VN}_REQUIRES" "%s" "\
+"
+
+################################
+THIS_PN="gtest"
+THIS_VN=${THIS_PN//[-+\.]/_}
+PKG_NAMES+=" ${THIS_PN}"
+
+printf -v "${THIS_VN}_CATEGORY" "%s" "${CATEGORY}"
+printf -v "${THIS_VN}_SUMMARY"  "%s" "${SUMMARY% *}"
+printf -v "${THIS_VN}_CONTENTS" "%s" "\
+  usr/bin/cyggtest*\
+  usr/share/doc/$NAME/\\
+"
+printf -v "${THIS_VN}_REQUIRES" "%s" "\
+"
+
+################################
+THIS_PN="gmock-devel"
+THIS_VN=${THIS_PN//[-+\.]/_}
+PKG_NAMES+=" ${THIS_PN}"
+
+printf -v "${THIS_VN}_CATEGORY" "%s" "${CATEGORY}"
+printf -v "${THIS_VN}_SUMMARY"  "%s" "${SUMMARY% *} (devel)"
+printf -v "${THIS_VN}_CONTENTS" "%s" "\
+  usr/include/gmock/\
+  usr/lib/libgmock*\
+  usr/lib/pkgconfig/gmock*\
+  usr/share/doc/gmock-devel/\
+"
+printf -v "${THIS_VN}_REQUIRES" "%s" "\
+"
+
+################################
+THIS_PN="gtest-devel"
+THIS_VN=${THIS_PN//[-+\.]/_}
+PKG_NAMES+=" ${THIS_PN}"
+
+printf -v "${THIS_VN}_CATEGORY" "%s" "${CATEGORY}"
+printf -v "${THIS_VN}_SUMMARY"  "%s" "${SUMMARY% *} (devel)"
+printf -v "${THIS_VN}_CONTENTS" "%s" "\
+  usr/include/gtest/\
+  usr/lib/libgtest*\
+  usr/lib/pkgconfig/gtest*\
+  usr/lib/cmake/\
+  usr/share/doc/gtest-devel/\
+"
+printf -v "${THIS_VN}_REQUIRES" "%s" "\
+"
+################################
+# Modified from cmake.cygclass/src_install (cmake)
+src_install() {
+        cd ${B}
+        if [ -f build.ninja ]
+        then
+                ninja_install
+        else
+                cyginstall
+        fi
+
+        # Install documents
+        cd ${S}
+        local DOCDST
+        local DOCSRC
+        DOCDST=usr/share/doc/gmock-devel/
+        DOCSRC=googlemock
+        install -d ${D}/${DOCDST}/docs
+        install -m 644 -t ${D}/${DOCDST}/\
+          ${DOCSRC}/CONTRIBUTORS*\
+          ${DOCSRC}/LICENSE*\
+          ${DOCSRC}/README*\
+          ;
+        install -m 644 -t ${D}/${DOCDST}/docs\
+          googlemock/docs/*\
+          ;
+        DOCDST=usr/share/doc/gtest-devel/
+        DOCSRC=googletest
+        install -d ${D}/${DOCDST}/docs
+        install -d ${D}/${DOCDST}/samples
+        install -m 644 -t ${D}/${DOCDST}/\
+          ${DOCSRC}/CONTRIBUTORS*\
+          ${DOCSRC}/LICENSE*\
+          ${DOCSRC}/README*\
+          ;
+        install -m 644 -t ${D}/${DOCDST}/docs\
+          ${DOCSRC}/docs/*\
+          ;
+        install -m 644 -t ${D}/${DOCDST}/samples\
+          ${DOCSRC}/samples/*\
+          ;
+}
+
+################################
