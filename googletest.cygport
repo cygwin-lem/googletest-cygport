@@ -4,7 +4,7 @@ inherit cmake ninja python3
 ################################
 
 NAME=googletest
-VERSION=1.10.0p473
+VERSION=1.10.0p513
 RELEASE=1
 
 ################################
@@ -24,6 +24,7 @@ HOMEPAGE="https://github.com/google/googletest"
 GIT_REPO="https://github.com/google/googletest"
 declare -A GIT_DATEHASH_BY_NAME=(
   # git log --date=iso-strict --format='%cd/%H' -1
+  [1.10.0p513]=2020-12-28T13:32:06-05:00/389cb68b87193358358ae87cc56d257fd0d80189
   [1.10.0p473]=2020-11-02T22:26:39-05:00/fb98f7447e5d2e498d6458dcd5c888fdeaae82bc
   [1.10.0p463]=2020-10-30T14:10:41-04:00/2828773179fa425ee406df61890a150577178ea2
   [1.10.0p2]=2020-03-03T09:44:53-05:00/6a7ed316a5cdc07b6d26362c90770787513822d4 #v1.10.x
